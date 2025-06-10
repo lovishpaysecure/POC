@@ -8,17 +8,28 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Function to get JWT token from cookies
+const getJwtFromCookies = () => {
+    const cookies = document.cookie.split(';');
+    const jwtCookie = cookies.find(cookie => cookie.trim().startsWith('JWT_TOKEN='));
+    return jwtCookie ? jwtCookie.split('=')[1].trim() : null;
+};
+
 // Create axios instance with default config
 const api = axios.create({
-    withCredentials: true, // This is important for sending cookies
-    baseURL: '/api'
+    withCredentials: true,
+    baseURL: 'http://localhost:9091/',
+    headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [authState, setAuthState] = useState<AuthState>({
         user: null,
-        isAuthenticated: true, // Assume authenticated since JWT cookie exists
-        isLoading: false, // No initial loading state needed
+        isAuthenticated: true,
+        isLoading: false,
     });
 
     const redirectToLogin = () => {
@@ -27,10 +38,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Setup axios interceptors for handling JWT
     useEffect(() => {
-        // Request interceptor - no need to manually set the JWT as it's in the cookie
+        // Request interceptor to add JWT token from cookies
         const requestInterceptor = api.interceptors.request.use(
             config => {
-                // The JWT cookie will be automatically included due to withCredentials: true
+                const token = getJwtFromCookies();
+                if (token) {
+                    config.headers.Authorization = `Bearer ${token}`;
+                }
                 return config;
             },
             error => {
@@ -43,7 +57,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             response => response,
             error => {
                 if (error.response?.status === 401) {
-                    // JWT is expired or invalid
                     setAuthState({
                         user: null,
                         isAuthenticated: true,
@@ -55,8 +68,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         );
 
+        // Initial auth check
+        const token = getJwtFromCookies();
+        if (!token) {
+            setAuthState({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+            });
+        }
+
         return () => {
-            // Clean up interceptors
             api.interceptors.request.eject(requestInterceptor);
             api.interceptors.response.eject(responseInterceptor);
         };

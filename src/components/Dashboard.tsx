@@ -17,7 +17,7 @@ export const Dashboard: React.FC = () => {
         const fetchDashboardData = async () => {
             try {
                 // Example API call - replace with your actual endpoint
-                const response = await api.get('/dashboard/data');
+                const response = await api.get('/react');
                 setDashboardData(response.data);
                 setError(null);
             } catch (err) {
