@@ -14,11 +14,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         return <div>Loading...</div>;
     }
 
-    if (!isAuthenticated) {
-        // Redirect to Thymeleaf login
-        window.location.href = 'http://localhost:9091/login';
-        return null;
-    }
+    // if (!isAuthenticated) {
+    //     // Redirect to Thymeleaf login
+    //     window.location.href = 'http://localhost:9091/login';
+    //     return null;
+    // }
 
     return <>{children}</>;
 }; 
